@@ -4,7 +4,9 @@ import pyttsx3
 import webbrowser
 import subprocess
 import psutil 
-import ctypes  # For controlling brightness on Windows
+import ctypes  # For controlling volume on Windows
+import pyautogui  # Library for taking screenshots
+import os
 
 recognizer = sr.Recognizer()
 synthesizer = pyttsx3.init()
@@ -22,36 +24,62 @@ responses = {
 
 def generate_response(user_input):
     user_input = user_input.lower()
-    for key in responses:
-        if key in user_input:
-            response = random.choice(responses[key])
-            speak(response)
-            return response
+    
+    # Check if the user input starts with "assistant"
+    if user_input.startswith("assistant"):
+        # Remove "assistant" from the beginning of the input
+        user_input = user_input[len("assistant"):].strip()
+        
+        for key in responses:
+            if key in user_input:
+                response = random.choice(responses[key])
+                speak(response)
+                return response
 
-    app_commands = {
-        "chrome": "chrome",
-        "notepad": "notepad",
-        "spotify": "spotify",
-        "file explorer": "explorer.exe",
-    }
-    for app_name, command in app_commands.items():
-        if app_name in user_input:
-            try:
-                subprocess.Popen([command], shell=True) 
-                speak(f"Opening {app_name}.")
-                return f"Opening {app_name}."
-            except FileNotFoundError:
-                search_in_powershell(app_name)
-                return f"Application {app_name} not found locally. Searching in PowerShell."
+        app_commands = {
+            "chrome": "chrome",
+            "notepad": "notepad",
+            "spotify": "spotify",
+            "file explorer": "explorer.exe",
+        }
+        for app_name, command in app_commands.items():
+            if app_name in user_input:
+                try:
+                    subprocess.Popen([command], shell=True) 
+                    speak(f"Opening {app_name}.")
+                    return f"Opening {app_name}."
+                except FileNotFoundError:
+                    search_in_powershell(app_name)
+                    return f"Application {app_name} not found locally. Searching in PowerShell."
 
-    if "volume" in user_input:
-        change_volume(user_input)
-        return "Volume changed."
+        if "volume" in user_input:
+            change_volume(user_input)
+            return "Volume changed."
 
-    search_url = "https://www.google.com/search?q=" + user_input
-    webbrowser.open_new_tab(search_url)
-    speak("I've searched the web for you.")
-    return "I've searched the web for you."
+        if "screenshot" in user_input:
+            take_screenshot()
+            return "Screenshot taken and saved."
+
+        search_url = "https://www.google.com/search?q=" + user_input
+        webbrowser.open_new_tab(search_url)
+        speak("I've searched the web for you.")
+        return "I've searched the web for you."
+    
+    else:
+        return "Sorry, I only respond to commands starting with 'Assistant'."
+
+def take_screenshot():
+    # Specify the full path to the screenshot file
+    screenshots_dir = os.path.join(os.path.expanduser('~'), 'OneDrive','Pictures', 'Screenshots')
+    screenshot_path = os.path.join(screenshots_dir, 'screenshot.png')
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(screenshots_dir, exist_ok=True)
+    
+    # Capture the screen and save the screenshot
+    screenshot = pyautogui.screenshot()
+    screenshot.save(screenshot_path)
+    speak(f"Screenshot taken and saved.")
 
 def search_in_powershell(app_name):
     powershell_command = f"Get-AppxPackage *{app_name}* | Select-Object -Property PackageFullName"
@@ -116,7 +144,7 @@ def interact():
     while True:
         user_input = listen()
         if user_input is not None:
-            if user_input.lower() == "minimize all windows" or user_input.lower() == "minimise all windows":
+            if user_input.lower() == "minimise all windows":
                 minimize_all_windows()
                 speak("Minimized all windows.")
             elif user_input.lower().startswith("change language to"):
@@ -130,6 +158,7 @@ def interact():
                 print("AssistantBot:", response)
                 if user_input.lower() == "quit" or user_input.lower() == "exit":
                     break
+
 engine = pyttsx3.init()
 engine.say(interact)
 engine.runAndWait()
