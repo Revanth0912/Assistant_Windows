@@ -93,12 +93,6 @@ and more — using natural speech input.
 
 ---
 
-## 📸 Demo
-
-> *Coming Soon: Screen recording or GIF of the assistant in action.*
-
----
-
 ## 📧 Contact
 
 * 👨‍💻 M Revanth Reddy
